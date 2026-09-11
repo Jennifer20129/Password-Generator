@@ -10,10 +10,13 @@ const symbolsCheckbox = document.getElementById("symbols");
 
 const generateBtn = document.getElementById("generateBtn");
 const copyBtn = document.getElementById("copyBtn");
+const toggleBtn = document.getElementById("toggleBtn");
 
 const strengthText = document.getElementById("strengthText");
 const strengthFill = document.getElementById("strengthFill");
 const message = document.getElementById("message");
+
+
 
 const uppercaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -31,28 +34,64 @@ lengthInput.addEventListener("input", function () {
 
 });
 
+
+function getRandomIndex(max) {
+
+    const randomBuffer = new Uint32Array(1);
+
+    crypto.getRandomValues(randomBuffer);
+
+    
+    const limit = Math.floor(0xFFFFFFFF / max) * max;
+
+    let randomValue = randomBuffer[0];
+
+    while (randomValue >= limit) {
+
+        crypto.getRandomValues(randomBuffer);
+        randomValue = randomBuffer[0];
+    }
+
+    return randomValue % max;
+}
+
+
+function shuffleArray(array) {
+
+    for (let i = array.length - 1; i > 0; i--) {
+
+        const j = getRandomIndex(i + 1);
+
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+
+    return array;
+}
+
+
+
 function generatePassword() {
 
-    let characters = "";
+    const selectedSets = [];
 
     if (uppercaseCheckbox.checked) {
-        characters += uppercaseLetters;
+        selectedSets.push(uppercaseLetters);
     }
 
     if (lowercaseCheckbox.checked) {
-        characters += lowercaseLetters;
+        selectedSets.push(lowercaseLetters);
     }
 
     if (numbersCheckbox.checked) {
-        characters += numberCharacters;
+        selectedSets.push(numberCharacters);
     }
 
     if (symbolsCheckbox.checked) {
-        characters += symbolCharacters;
+        selectedSets.push(symbolCharacters);
     }
 
 
-    if (characters.length === 0) {
+    if (selectedSets.length === 0) {
 
         message.textContent = "Please select at least one option.";
 
@@ -66,19 +105,39 @@ function generatePassword() {
     }
 
 
-    let password = "";
-
     const passwordLength = Number(lengthInput.value);
 
+    if (passwordLength < selectedSets.length) {
 
-    for (let i = 0; i < passwordLength; i++) {
+        message.textContent = `Length must be at least ${selectedSets.length} for the selected options.`;
 
-        const randomIndex = Math.floor(
-            Math.random() * characters.length
-        );
-
-        password += characters[randomIndex];
+        return;
     }
+
+
+    const allCharacters = selectedSets.join("");
+
+    const passwordChars = [];
+
+
+    
+    selectedSets.forEach(function (set) {
+
+        passwordChars.push(set[getRandomIndex(set.length)]);
+    });
+
+
+    
+    for (let i = passwordChars.length; i < passwordLength; i++) {
+
+        passwordChars.push(allCharacters[getRandomIndex(allCharacters.length)]);
+    }
+
+
+    
+    shuffleArray(passwordChars);
+
+    const password = passwordChars.join("");
 
 
     passwordInput.value = password;
@@ -87,7 +146,6 @@ function generatePassword() {
 
     checkStrength(password);
 }
-
 
 
 function checkStrength(password) {
@@ -124,20 +182,30 @@ function checkStrength(password) {
     let level;
 
     if (strength <= 2) {
+
         level = "weak";
         strengthText.textContent = "Weak";
+
     } else if (strength <= 4) {
+
         level = "medium";
         strengthText.textContent = "Medium";
+
     } else {
+
         level = "strong";
         strengthText.textContent = "Strong";
     }
 
+
     strengthText.className = level;
+
     strengthFill.className = level;
+
     strengthFill.style.width = percent + "%";
 }
+
+
 
 generateBtn.addEventListener("click", generatePassword);
 
@@ -158,13 +226,38 @@ copyBtn.addEventListener("click", async function () {
     const originalText = copyBtn.textContent;
 
     copyBtn.textContent = "Copied!";
+
     copyBtn.classList.add("copied");
 
     message.textContent = "Password copied!";
 
+
     setTimeout(function () {
+
         copyBtn.textContent = originalText;
+
         copyBtn.classList.remove("copied");
+
     }, 1500);
+
+});
+
+
+
+toggleBtn.addEventListener("click", function () {
+
+    if (passwordInput.type === "password") {
+
+        passwordInput.type = "text";
+
+        toggleBtn.textContent = "Hide";
+
+    } else {
+
+        passwordInput.type = "password";
+
+        toggleBtn.textContent = "Show";
+
+    }
 
 });
